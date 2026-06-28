@@ -1,123 +1,132 @@
-import { useRouter } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList,
+  ActivityIndicator,
+  Alert,
+  FlatList,
   Platform,
-  RefreshControl, StyleSheet,
-  Text, TouchableOpacity, View
-} from 'react-native'
-import { supabase } from '../../lib/supabase'
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { colors, radius, shadows, spacing } from '../../constants/theme';
+import { supabase } from '../../lib/supabase';
 
 type Complaint = {
-  id: string
-  title: string
-  description: string
-  category: string
-  urgency: string
-  status: string
-  created_at: string
-}
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  urgency: string;
+  status: string;
+  created_at: string;
+};
 
-const FILTERS = ['all', 'pending', 'under_review', 'resolved', 'dismissed']
+const FILTERS = ['all', 'pending', 'under_review', 'resolved', 'dismissed'];
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   pending: { bg: '#FFF7ED', text: '#EA580C' },
   under_review: { bg: '#EFF6FF', text: '#2563EB' },
-  resolved: { bg: '#F0FDF4', text: '#16A34A' },
+  resolved: { bg: '#ECFDF5', text: '#059669' },
   dismissed: { bg: '#F9FAFB', text: '#6B7280' },
-}
+};
 
 const URGENCY_COLORS: Record<string, string> = {
-  low: '#16A34A',
+  low: '#059669',
   medium: '#D97706',
   high: '#DC2626',
-}
+};
 
 export default function ComplaintsScreen() {
-  const [complaints, setComplaints] = useState<Complaint[]>([])
-  const [filtered, setFiltered] = useState<Complaint[]>([])
-  const [activeFilter, setActiveFilter] = useState('all')
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const router = useRouter()
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [filtered, setFiltered] = useState<Complaint[]>([]);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   async function fetchComplaints() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
     const { data } = await supabase
       .from('complaints')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (data) {
-      setComplaints(data)
-      applyFilter(data, activeFilter)
+      setComplaints(data);
+      applyFilter(data, activeFilter);
     }
-    setLoading(false)
-    setRefreshing(false)
+    setLoading(false);
+    setRefreshing(false);
   }
 
   function applyFilter(data: Complaint[], filter: string) {
     if (filter === 'all') {
-      setFiltered(data)
+      setFiltered(data);
     } else {
-      setFiltered(data.filter(c => c.status === filter))
+      setFiltered(data.filter(c => c.status === filter));
     }
   }
 
-  useEffect(() => { fetchComplaints() }, [])
+  useFocusEffect(
+    useCallback(() => {
+      fetchComplaints();
+    }, [])
+  );
 
   useEffect(() => {
-    applyFilter(complaints, activeFilter)
-  }, [activeFilter, complaints])
+    applyFilter(complaints, activeFilter);
+  }, [activeFilter, complaints]);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true)
-    fetchComplaints()
-  }, [])
+    setRefreshing(true);
+    fetchComplaints();
+  }, []);
 
- async function handleDelete(id: string) {
-  // Use browser confirm on web, React Native Alert on native
-  const confirmed = Platform.OS === 'web'
-    ? window.confirm('Delete this complaint? This action cannot be undone.')
-    : await new Promise((resolve) => {
-        Alert.alert('Delete Complaint', 'Are you sure?', [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
-        ]);
-      });
+  async function handleDelete(id: string) {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm('Delete this complaint? This action cannot be undone.')
+      : await new Promise((resolve) => {
+          Alert.alert('Delete Complaint', 'Are you sure?', [
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Delete', style: 'destructive', onPress: () => resolve(true) },
+          ]);
+        });
 
-  if (!confirmed) return;
+    if (!confirmed) return;
 
-  // Optimistic update – remove from UI immediately
-  const previousComplaints = [...complaints];
-  setComplaints(prev => prev.filter(c => c.id !== id));
+    const previousComplaints = [...complaints];
+    setComplaints(prev => prev.filter(c => c.id !== id));
 
-  const { error } = await supabase
-    .from('complaints')
-    .delete()
-    .eq('id', id);
+    const { error } = await supabase
+      .from('complaints')
+      .delete()
+      .eq('id', id);
 
-  if (error) {
-    // Restore on error
-    setComplaints(previousComplaints);
-    Alert.alert('Error', error.message);
+    if (error) {
+      setComplaints(previousComplaints);
+      Alert.alert('Error', error.message);
+    }
   }
-}
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
-    )
+    );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterWrapper}>
+      {/* Filter bar */}
+      <View style={styles.filterBar}>
         <FlatList
           horizontal
           data={FILTERS}
@@ -125,17 +134,14 @@ export default function ComplaintsScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <Pressable
               style={[styles.filterChip, activeFilter === item && styles.filterChipActive]}
               onPress={() => setActiveFilter(item)}
             >
-              <Text style={[
-                styles.filterChipText,
-                activeFilter === item && styles.filterChipTextActive
-              ]}>
+              <Text style={[styles.filterChipText, activeFilter === item && styles.filterChipTextActive]}>
                 {item.replace('_', ' ')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         />
       </View>
@@ -145,21 +151,25 @@ export default function ComplaintsScreen() {
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyIcon}>📭</Text>
-            <Text style={styles.emptyText}>No complaints found</Text>
+            <Ionicons name="document-text-outline" size={44} color="#CBD5E1" />
+            <Text style={styles.emptyTitle}>No complaints found</Text>
+            <Text style={styles.emptySub}>Try changing the filter or file a new one</Text>
           </View>
         }
         renderItem={({ item }) => (
-          <TouchableOpacity
+          <Pressable
             style={styles.card}
             onPress={() => router.push(`/complaint/${item.id}`)}
           >
             <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+                <View style={[styles.urgencyDot, { backgroundColor: URGENCY_COLORS[item.urgency] || '#6B7280' }]} />
+              </View>
               <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status]?.bg }]}>
                 <Text style={[styles.statusText, { color: STATUS_COLORS[item.status]?.text }]}>
                   {item.status.replace('_', ' ')}
@@ -169,102 +179,147 @@ export default function ComplaintsScreen() {
 
             <Text style={styles.description} numberOfLines={2}>{item.description}</Text>
 
-            <View style={styles.cardFooter}>
-              <Text style={styles.categoryTag}>{item.category}</Text>
-              <Text style={[styles.urgencyTag, { color: URGENCY_COLORS[item.urgency] }]}>
-                ● {item.urgency}
-              </Text>
+            <View style={styles.cardMeta}>
+              <View style={styles.metaItem}>
+                <Ionicons name="folder-outline" size={13} color={colors.muted} />
+                <Text style={styles.metaText}>{item.category}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Ionicons name="calendar-outline" size={13} color={colors.muted} />
+                <Text style={styles.metaText}>
+                  {new Date(item.created_at).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
+                </Text>
+              </View>
             </View>
 
             <View style={styles.cardActions}>
-              <TouchableOpacity
+              <Pressable
                 style={styles.editBtn}
                 onPress={() => router.push(`/edit-complaint/${item.id}`)}
               >
+                <Ionicons name="create-outline" size={14} color="#2563EB" />
                 <Text style={styles.editBtnText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 style={styles.deleteBtn}
                 onPress={() => handleDelete(item.id)}
               >
+                <Ionicons name="trash-outline" size={14} color="#DC2626" />
                 <Text style={styles.deleteBtnText}>Delete</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
-          </TouchableOpacity>
+          </Pressable>
         )}
       />
 
-      <TouchableOpacity
+      <Pressable
         style={styles.fab}
         onPress={() => router.push('/new-complaint')}
       >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+        <Ionicons name="add" size={26} color="#fff" />
+      </Pressable>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg },
 
-  filterWrapper: { backgroundColor: '#fff', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  filterRow: { paddingHorizontal: 16, gap: 8 },
-  filterChip: {
-    paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 20, backgroundColor: '#F1F5F9',
+  // Filters
+  filterBar: {
+    backgroundColor: colors.card,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  filterChipActive: { backgroundColor: '#3B82F6' },
-  filterChipText: { fontSize: 13, color: '#666', fontWeight: '500', textTransform: 'capitalize' },
+  filterRow: { paddingHorizontal: spacing.xl, gap: spacing.sm },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+    backgroundColor: '#F1F5F9',
+  },
+  filterChipActive: { backgroundColor: colors.fg },
+  filterChipText: { fontSize: 12, color: colors.muted, fontWeight: '600', textTransform: 'capitalize' },
   filterChipTextActive: { color: '#fff' },
 
-  countText: { fontSize: 13, color: '#888', paddingHorizontal: 20, paddingVertical: 10 },
-
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+  countText: {
+    fontSize: 12, color: colors.muted, fontWeight: '600',
+    paddingHorizontal: spacing.xxl, paddingVertical: spacing.sm,
+    textTransform: 'uppercase', letterSpacing: 0.3,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: '#111', flex: 1, marginRight: 8 },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
-  statusText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
 
-  description: { fontSize: 13, color: '#666', lineHeight: 19, marginBottom: 10 },
+  listContent: { paddingHorizontal: spacing.xl, paddingBottom: 100 },
 
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' },
-  categoryTag: { fontSize: 12, color: '#666', fontWeight: '500' },
-  urgencyTag: { fontSize: 12, fontWeight: '600' },
+  // Card
+  card: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  titleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: spacing.md, gap: spacing.sm },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: colors.fg, flex: 1 },
+  urgencyDot: { width: 8, height: 8, borderRadius: 4 },
+  statusBadge: { paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.sm },
+  statusText: { fontSize: 10, fontWeight: '700', textTransform: 'capitalize', letterSpacing: 0.3 },
 
-  cardActions: { flexDirection: 'row', gap: 8, borderTopWidth: 1, borderTopColor: '#f5f5f5', paddingTop: 10 },
+  description: { fontSize: 13, color: colors.muted, lineHeight: 19, marginBottom: spacing.md },
+
+  cardMeta: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 12, color: colors.muted, fontWeight: '500' },
+
+  // Actions
+  cardActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: spacing.md,
+  },
   editBtn: {
-    flex: 1, paddingVertical: 7, borderRadius: 8,
-    backgroundColor: '#EFF6FF', alignItems: 'center',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+    paddingVertical: 9, borderRadius: radius.sm,
+    backgroundColor: '#EFF6FF',
   },
   editBtnText: { fontSize: 13, fontWeight: '600', color: '#2563EB' },
   deleteBtn: {
-    flex: 1, paddingVertical: 7, borderRadius: 8,
-    backgroundColor: '#FEF2F2', alignItems: 'center',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5,
+    paddingVertical: 9, borderRadius: radius.sm,
+    backgroundColor: '#FEF2F2',
   },
   deleteBtnText: { fontSize: 13, fontWeight: '600', color: '#DC2626' },
 
+  // FAB
   fab: {
-    position: 'absolute', bottom: 24, right: 24,
-    width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#3B82F6', shadowOpacity: 0.4, shadowRadius: 10,
-    elevation: 6,
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.accent,
   },
-  fabText: { color: '#fff', fontSize: 28, fontWeight: '300' },
 
+  // Empty
   emptyBox: { alignItems: 'center', paddingTop: 60 },
-  emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyText: { fontSize: 15, color: '#888' },
-})
+  emptyTitle: { fontSize: 15, fontWeight: '600', color: colors.fg, marginTop: spacing.md },
+  emptySub: { fontSize: 13, color: colors.muted, marginTop: 4 },
+});

@@ -1,35 +1,50 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Text, View } from 'react-native';
-
-function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
-  return (
-    <View style={{ alignItems: 'center', paddingTop: 4 }}>
-      <Text style={{ fontSize: 20 }}>{emoji}</Text>
-    </View>
-  )
-}
+import { Platform } from 'react-native';
+import { colors, shadows } from '../../constants/theme';
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{
-      tabBarActiveTintColor: '#3B82F6',
-      tabBarInactiveTintColor: '#94A3B8',
-      tabBarStyle: {
-        paddingBottom: 8, height: 64,
-        borderTopWidth: 1, borderTopColor: '#F1F5F9',
-        backgroundColor: '#fff',
-      },
-      tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginBottom: 4 },
-      headerStyle: { backgroundColor: '#fff' },
-      headerTitleStyle: { fontWeight: '700', fontSize: 17, color: '#111' },
-      headerShadowVisible: false,
-    }}>
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: '#94A3B8',
+        tabBarStyle: {
+          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          height: Platform.OS === 'ios' ? 82 : 64,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          backgroundColor: colors.card,
+          ...shadows.sm,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '600',
+          marginTop: 2,
+        },
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTitleStyle: {
+          fontWeight: '700',
+          fontSize: 17,
+          color: colors.fg,
+        },
+        headerShadowVisible: false,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Dashboard',
           tabBarLabel: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" label="Home" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={22}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -37,7 +52,13 @@ export default function TabsLayout() {
         options={{
           title: 'My Complaints',
           tabBarLabel: 'Complaints',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" label="Complaints" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'document-text' : 'document-text-outline'}
+              size={22}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -45,7 +66,13 @@ export default function TabsLayout() {
         options={{
           title: 'Reports',
           tabBarLabel: 'Reports',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" label="Reports" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'bar-chart' : 'bar-chart-outline'}
+              size={22}
+              color={color}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -53,9 +80,15 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="👤" label="Profile" focused={focused} />,
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={22}
+              color={color}
+            />
+          ),
         }}
       />
     </Tabs>
-  )
+  );
 }

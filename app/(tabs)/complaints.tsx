@@ -226,7 +226,6 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
   container: { flex: 1, backgroundColor: colors.bg },
 
-  // Filters
   filterBar: {
     backgroundColor: colors.card,
     paddingVertical: spacing.md,
@@ -252,7 +251,6 @@ const styles = StyleSheet.create({
 
   listContent: { paddingHorizontal: spacing.xl, paddingBottom: 100 },
 
-  // Card
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
@@ -283,7 +281,6 @@ const styles = StyleSheet.create({
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontSize: 12, color: colors.muted, fontWeight: '500' },
 
-  // Actions
   cardActions: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -304,7 +301,6 @@ const styles = StyleSheet.create({
   },
   deleteBtnText: { fontSize: 13, fontWeight: '600', color: '#DC2626' },
 
-  // FAB
   fab: {
     position: 'absolute',
     bottom: 28,
@@ -318,7 +314,6 @@ const styles = StyleSheet.create({
     ...shadows.accent,
   },
 
-  // Empty
   emptyBox: { alignItems: 'center', paddingTop: 60 },
   emptyTitle: { fontSize: 15, fontWeight: '600', color: colors.fg, marginTop: spacing.md },
   emptySub: { fontSize: 13, color: colors.muted, marginTop: 4 },

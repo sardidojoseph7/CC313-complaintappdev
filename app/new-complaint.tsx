@@ -1,9 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -39,9 +43,33 @@ export default function NewComplaintScreen() {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [urgency, setUrgency] = useState('low');
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState<string | null>(null);
   const [titleFocused, setTitleFocused] = useState(false);
   const [descFocused, setDescFocused] = useState(false);
   const router = useRouter();
+
+  const pickImage = async () => {
+  const permission =
+    await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        'Permission Required',
+        'Please allow access to your gallery.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   async function handleSubmit() {
     if (!title.trim()) {
@@ -65,6 +93,44 @@ export default function NewComplaintScreen() {
         return;
       }
 
+      console.log("User:", user);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("Session:", session);
+      const { data: storageData, error: storageError } =
+        await supabase.storage
+          .from("complaint-images")
+          .list();
+      console.log("Storage Data:", storageData);
+      console.log("Storage Error:", storageError);
+
+    let imageUrl: string | null = null;
+      if (image) {
+       const fileName = `${user.id}-${Date.now()}.jpg`;
+          console.log("Step 1 - Reading image as Base64");
+          const base64 = await FileSystem.readAsStringAsync(image, {
+                encoding: FileSystem.EncodingType.Base64,
+              });
+
+          const arrayBuffer = decode(base64);
+          const uploadResult = await supabase.storage
+            .from("complaint-images")
+            .upload(fileName, arrayBuffer);
+
+          if (uploadResult.error) {
+            console.log("Upload error:", uploadResult.error);
+            throw uploadResult.error;
+          }
+
+          const { data } = supabase.storage
+            .from("complaint-images")
+            .getPublicUrl(fileName);
+
+          imageUrl = data.publicUrl;
+      }
+
       const { data: complaint, error } = await supabase
         .from('complaints')
         .insert({
@@ -74,6 +140,7 @@ export default function NewComplaintScreen() {
           category,
           urgency,
           status: 'pending',
+          image_url: imageUrl,
         })
         .select()
         .single();
@@ -233,6 +300,27 @@ export default function NewComplaintScreen() {
           })}
         </View>
 
+        <Text style={styles.label}>Evidence Photo</Text>
+          <Pressable
+            style={styles.uploadButton}
+            onPress={pickImage}
+          >
+            <Ionicons
+              name="image-outline"
+              size={20}
+              color={colors.accent}
+            />
+            <Text style={styles.uploadText}>
+              {image ? "Change Image" : "Upload Image"}
+            </Text>
+          </Pressable>
+          {image && (
+            <Image
+              source={{ uri: image }}
+              style={styles.previewImage}
+            />
+          )}
+
         <Pressable
           style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
           onPress={handleSubmit}
@@ -302,10 +390,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.md, marginTop: spacing.xxl,
     height: 54, justifyContent: 'center', ...shadows.accent,
   },
+
   submitBtnDisabled: { backgroundColor: '#5EEAD4', shadowOpacity: 0, elevation: 0 },
   submitBtnContent: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   submitBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
   cancelBtn: { padding: spacing.md, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.sm },
   cancelBtnText: { color: colors.muted, fontWeight: '600', fontSize: 14 },
+
+  uploadButton: {marginTop: spacing.md, borderWidth: 1.5, borderColor: colors.accent, borderStyle: 'dashed',
+  borderRadius: radius.md, height: 60, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: spacing.sm,},
+
+  uploadText: {color: colors.accent, fontWeight: '700', fontSize: 15,},
+
+  previewImage: { width: '100%', height: 220, borderRadius: radius.md, marginTop: spacing.md,},
 });

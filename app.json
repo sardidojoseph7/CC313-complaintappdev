@@ -4,13 +4,16 @@
     "slug": "complaint-app",
     "version": "1.0.0",
     "scheme": "complaintapp",
-     "owner": "askeladd7",
+    "owner": "askeladd7",
     "web": {
       "bundler": "metro"
     },
     "plugins": [
       "expo-router",
       "expo-web-browser"
-    ]
+    ],
+    "android": {
+      "package": "com.anonymous.complaintapp"
+    }
   }
 }

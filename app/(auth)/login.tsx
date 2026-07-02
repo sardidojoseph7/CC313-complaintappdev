@@ -79,7 +79,7 @@ export default function LoginScreen() {
               <Ionicons name="document-text" size={32} color={colors.accent} />
             </View>
           </View>
-          <Text style={styles.appName}>BarangayConnect</Text>
+          <Text style={styles.appName}>Complaint App</Text>
           <Text style={styles.tagline}>Connecting residents to local government</Text>
         </View>
 
@@ -145,6 +145,10 @@ export default function LoginScreen() {
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
         </View>
 
+        <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
+          <Text style={styles.forgotPassword}>Forgot Password?</Text>
+        </Pressable>
+
         {/* Login Button */}
         <Pressable
           style={[styles.loginButton, loading && styles.buttonDisabled]}
@@ -181,7 +185,6 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
   },
 
-  // Header
   header: {
     alignItems: 'center',
     marginBottom: spacing.xxxl,
@@ -216,7 +219,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // Welcome
+
   welcomeSection: {
     marginBottom: spacing.xxl,
   },
@@ -232,12 +235,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // Input group (wraps input + error)
   inputGroup: {
     marginBottom: spacing.md,
   },
 
-  // Input wrapper (icon + field + eye in one box)
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -271,6 +272,16 @@ const styles = StyleSheet.create({
   passwordInput: {
     paddingRight: spacing.xs,
   },
+  
+  forgotPassword: {
+  alignSelf: 'flex-end',
+  marginTop: 8,
+  marginBottom: 20,
+  color: colors.accent,
+  fontSize: 14,
+  fontWeight: '600',
+},
+
   eyeIcon: {
     paddingLeft: spacing.sm,
   },

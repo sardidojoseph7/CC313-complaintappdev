@@ -1,3 +1,4 @@
+import * as NavigationBar from 'expo-navigation-bar'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, View } from 'react-native'
@@ -50,6 +51,11 @@ export default function RootLayout() {
     router.replace('/(tabs)')
   }
 }, [session, loading, segments])
+
+useEffect(() => {
+  NavigationBar.setVisibilityAsync('hidden')
+  NavigationBar.setBehaviorAsync('overlay-swipe')
+}, [])
 
   if (loading) {
     return (

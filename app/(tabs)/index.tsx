@@ -99,7 +99,7 @@ export default function DashboardScreen() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.brandName}>BarangayConnect</Text>
+          <Text style={styles.brandName}>ComplaintApp</Text>
           <Text style={styles.brandSub}>Public Portal</Text>
         </View>
         <Pressable

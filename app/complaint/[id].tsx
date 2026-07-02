@@ -186,7 +186,7 @@ export default function ComplaintDetailScreen() {
     <body>
       <div class="header">
         <div>
-          <div class="app-name">BarangayConnect Portal</div>
+          <div class="app-name">ComplaintApp Portal</div>
           <div class="doc-type">Official Public Incident & Blotter Receipt</div>
         </div>
         <div class="reference">
